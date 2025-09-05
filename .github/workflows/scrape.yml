@@ -47,7 +47,7 @@ jobs:
       # === Send CSV to SharePoint via Power Automate (HTTP trigger) ===
       # Requires repo secret: PA_FLOW_URL = your Flow's HTTP POST URL
       - name: Send CSV to SharePoint via Power Automate
-        if: success()  # only attempt if scraper step succeeded
+        if: success()
         env:
           PA_FLOW_URL: ${{ secrets.PA_FLOW_URL }}
         run: |
@@ -57,24 +57,20 @@ jobs:
             exit 0
           fi
 
-          # Base64-encode the CSV (use -w0 if available; fallback otherwise)
+          # Base64-encode the CSV (single line)
           if base64 --help 2>/dev/null | grep -q -- "-w"; then
             B64=$(base64 -w0 output/Country_Risk.csv)
           else
             B64=$(base64 output/Country_Risk.csv | tr -d '\n')
           fi
 
-          # Optional: timestamp the filename in Vancouver timezone
+          # Fixed filename (no timestamp)
           NAME="Country_Risk.csv"
 
-          # Folder path inside your SharePoint document library
-          # Adjust if needed (e.g., "Shared Documents/Reports/CountryRisk")
-          FOLDER_PATH="Documents partages/!PublishedModels/Vinci Country Risk Rating"
-
-          # POST to your flow
+          # POST only fileName + contentB64; folder is chosen inside the Flow
           curl -sS -X POST "$PA_FLOW_URL" \
             -H "Content-Type: application/json" \
-            -d "{\"fileName\":\"$NAME\",\"folderPath\":\"$FOLDER_PATH\",\"contentB64\":\"$B64\"}"
+            -d "{\"fileName\":\"$NAME\",\"contentB64\":\"$B64\"}"
 
       # Always upload debug files (if any)
       - name: Upload debug (HTML + screenshots)

@@ -65,7 +65,7 @@ jobs:
           fi
 
           # Optional: timestamp the filename in Vancouver timezone
-          NAME="Country_Risk_$(TZ=America/Vancouver date +%F).csv"
+          NAME="Country_Risk.csv"
 
           # Folder path inside your SharePoint document library
           # Adjust if needed (e.g., "Shared Documents/Reports/CountryRisk")

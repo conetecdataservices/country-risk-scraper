@@ -1,6 +1,6 @@
 To scrap data from Watson page to get information on each country's risk level.
 
-**Note**: When the workflow fails due to expiry of secret, follow the below steps :
+**Note**: If the workflow fails due to expiry of secret in future, follow the below steps to update the secret PLAYWRIGHT_AUTH_B64  :
 
           1. Download login_once.py to your desktop(Location: Desktop)
           

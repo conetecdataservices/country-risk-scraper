@@ -1,0 +1,66 @@
+name: Daily Country Risk Scrape (Playwright)
+
+on:
+  schedule:
+    # Runs every day at 13:00 UTC (≈ 6:00 AM Vancouver during summer, 5:00 AM in winter)
+    - cron: "0 13 * * *"
+  workflow_dispatch: {}  # lets you trigger it manually
+
+permissions:
+  contents: write
+
+jobs:
+  scrape:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Check out repo
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+
+      - name: Install Playwright + browsers
+        run: |
+          python -m pip install --upgrade pip
+          pip install playwright
+          python -m playwright install --with-deps chromium
+
+      # Decode your auth.json from the GitHub Secret
+      - name: Restore auth.json
+        run: |
+          echo "${{ secrets.PLAYWRIGHT_AUTH_B64 }}" | base64 -d > auth.json
+          echo "Auth.json restored"
+
+      - name: Run scraper
+        run: python scraper_playwright.py
+
+      - name: Upload CSV
+        uses: actions/upload-artifact@v4
+        with:
+          name: country-risk-csv
+          path: output/Country_Risk.csv
+          if-no-files-found: warn
+
+      - name: Upload debug (HTML + screenshots)
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: debug
+          path: debug/
+          if-no-files-found: ignore
+
+      # OPTIONAL: commit CSV into the repo for history
+      - name: Commit CSV to repo
+        run: |
+          if [ -f output/Country_Risk.csv ]; then
+            mkdir -p data
+            cp output/Country_Risk.csv data/Country_Risk.csv
+            git config user.name "github-actions[bot]"
+            git config user.email "github-actions[bot]@users.noreply.github.com"
+            git add data/Country_Risk.csv
+            git commit -m "Daily scrape: $(date -u +'%Y-%m-%dT%H:%M:%SZ')" || echo "No changes"
+            git push
+          fi
